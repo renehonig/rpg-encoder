@@ -1,0 +1,148 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/rpg-core",
+    "crates/rpg-parser",
+    "crates/rpg-encoder",
+    "crates/rpg-nav",
+    "crates/rpg-cli",
+    "crates/rpg-mcp",
+]
+
+[workspace.package]
+version = "0.1.1"
+edition = "2024"
+license = "MIT"
+authors = ["userFRM"]
+repository = "https://github.com/userFRM/rpg-encoder"
+homepage = "https://github.com/userFRM/rpg-encoder"
+keywords = ["code-analysis", "semantic-graph", "tree-sitter", "mcp", "code-navigation"]
+categories = ["development-tools", "parser-implementations"]
+
+[workspace.lints.clippy]
+# Enable pedantic lints with selective overrides for noisy/low-value ones
+pedantic = { level = "warn", priority = -1 }
+# Allow: format string captures — too many to fix, low value
+uninlined-format-args = "allow"
+# Allow: missing doc backticks — doc style, not correctness
+doc-markdown = "allow"
+# Allow: #[must_use] suggestions — too many, needs case-by-case review
+must-use-candidate = "allow"
+# Allow: missing # Errors doc section — most errors are self-explanatory
+missing-errors-doc = "allow"
+# Allow: module name repetition — intentional naming (e.g., graph::RPGraph)
+module-name-repetitions = "allow"
+# Allow: f64 precision loss from usize — acceptable for metrics/counts
+cast-precision-loss = "allow"
+# Allow: possible truncation — acceptable for line numbers
+cast-possible-truncation = "allow"
+# Allow: similar names — entity_id vs entity_ids etc. are fine
+similar-names = "allow"
+# Allow: wildcard enum matches — we handle all current variants
+wildcard-imports = "allow"
+# Allow: float cmp — our float comparisons are intentional (scoring, drift)
+float-cmp = "allow"
+# Allow: missing panics doc — panics are documented where non-obvious
+missing-panics-doc = "allow"
+# Allow: format!(..) appended to String — common pattern, not worth refactoring
+format-push-string = "allow"
+# Allow: semicolons on last statements — bench/test code style
+semicolon-if-nothing-returned = "allow"
+# Allow: Clone::clone() assignment — many instances, marginal improvement
+assigning-clones = "allow"
+# Allow: redundant closures for method calls — common pattern in iterator chains
+redundant-closure-for-method-calls = "allow"
+# Allow: too many lines — refactoring long functions would be excessive churn
+too-many-lines = "allow"
+# Allow: implicit hasher — our public APIs always use default hasher
+implicit-hasher = "allow"
+# Allow: single match else — match is often clearer than if-let for error paths
+single-match-else = "allow"
+# Allow: match same arms — intentional default fallback pattern
+match-same-arms = "allow"
+# Allow: needless pass by value — clap-derived handlers need owned types
+needless-pass-by-value = "allow"
+# Allow: missing fields in debug — MCP server intentionally omits large fields
+missing-fields-in-debug = "allow"
+# Allow: doc link with quotes — doc examples use JSON syntax
+doc-link-with-quotes = "allow"
+# Allow: if not else — both orderings are readable
+if-not-else = "allow"
+# Allow: map unwrap or — map().unwrap_or_else() is clearer in some contexts
+map-unwrap-or = "allow"
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+
+# Async runtime
+tokio = { version = "1.49.0", features = ["full"] }
+
+# CLI
+clap = { version = "4.5.57", features = ["derive"] }
+
+# Tree-sitter
+tree-sitter = "0.26.5"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.0"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-go = "0.25.0"
+tree-sitter-java = "0.23.5"
+tree-sitter-c = "0.24.1"
+tree-sitter-cpp = "0.23.4"
+
+# Error handling
+anyhow = "1.0.100"
+thiserror = "2.0.18"
+
+# Logging
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter"] }
+
+# MCP
+rmcp = { version = "0.14.0", features = ["server", "macros", "transport-io"] }
+schemars = "1.2.1"
+
+# File system
+walkdir = "2.5.0"
+ignore = "0.4.25"
+globset = "0.4.18"
+
+# Git
+git2 = "0.20.4"
+
+# Time
+chrono = { version = "0.4.43", features = ["serde"] }
+
+# Config
+toml = "0.9.8"
+
+# Version checking
+semver = "1.0.27"
+
+# String similarity
+strsim = "0.11.1"
+
+# Parallelism
+rayon = "1.11.0"
+
+# Compression
+zstd = "0.13.3"
+
+# TOON format
+toon-format = { version = "0.4.1", default-features = false }
+
+# Progress indicators
+indicatif = "0.17"
+
+# Testing
+tempfile = "3.24.0"
+criterion = { version = "0.8.2", features = ["html_reports"] }
+
+# Workspace crates
+rpg-core = { path = "crates/rpg-core" }
+rpg-parser = { path = "crates/rpg-parser" }
+rpg-encoder = { path = "crates/rpg-encoder" }
+rpg-nav = { path = "crates/rpg-nav" }
