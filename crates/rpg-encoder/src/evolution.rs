@@ -39,14 +39,12 @@ pub struct UpdateSummary {
 pub fn merge_features(new_graph: &mut RPGraph, old_graph: &RPGraph) -> usize {
     let mut restored = 0;
     for (id, new_entity) in &mut new_graph.entities {
-        // Only restore if the new entity has no features
-        if new_entity.semantic_features.is_empty() {
-            if let Some(old_entity) = old_graph.entities.get(id) {
-                if !old_entity.semantic_features.is_empty() {
-                    new_entity.semantic_features = old_entity.semantic_features.clone();
-                    restored += 1;
-                }
-            }
+        if new_entity.semantic_features.is_empty()
+            && let Some(old_entity) = old_graph.entities.get(id)
+            && !old_entity.semantic_features.is_empty()
+        {
+            new_entity.semantic_features = old_entity.semantic_features.clone();
+            restored += 1;
         }
     }
     restored
