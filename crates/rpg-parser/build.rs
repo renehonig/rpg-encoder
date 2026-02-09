@@ -37,7 +37,9 @@ fn scan_paradigm_includes(dir: &Path) -> Vec<String> {
             if entry.path().extension().is_some_and(|e| e == "toml") {
                 // Use absolute path for include_str! since the generated file is in OUT_DIR
                 let abs = entry.path().canonicalize().unwrap_or_else(|_| entry.path());
-                includes.push(format!("    include_str!(\"{}\")", abs.display()));
+                // Use forward slashes even on Windows so include_str! doesn't see backslashes
+                let path_str = abs.display().to_string().replace('\\', "/");
+                includes.push(format!("    include_str!(\"{}\")", path_str));
                 println!("cargo:rerun-if-changed={}", entry.path().display());
             }
         }
