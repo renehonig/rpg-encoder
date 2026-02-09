@@ -15,6 +15,15 @@ pub const SEMANTIC_PARSING_SYSTEM: &str = include_str!("prompts/semantic_parsing
 /// Synthesizes per-entity features into a holistic file-level summary.
 pub const FILE_SYNTHESIS_SYSTEM: &str = include_str!("prompts/file_synthesis.md");
 
+/// Domain discovery prompt — guides the LLM to identify functional areas from file features.
+pub const DOMAIN_DISCOVERY_PROMPT: &str = include_str!("prompts/domain_discovery.md");
+
+/// Hierarchy construction prompt — guides the LLM to assign files to 3-level hierarchy paths.
+pub const HIERARCHY_CONSTRUCTION_PROMPT: &str = include_str!("prompts/hierarchy_construction.md");
+
+/// Semantic routing prompt — guides the LLM to re-route drifted entities in the hierarchy.
+pub const SEMANTIC_ROUTING_PROMPT: &str = include_str!("prompts/semantic_routing.md");
+
 /// Strip `<think>...</think>` blocks that some models emit (qwen3, deepseek).
 fn strip_think_blocks(text: &str) -> String {
     let mut result = text.to_string();
