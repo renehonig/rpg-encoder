@@ -5,7 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.4.0] - 2026-02-13
+
+### Added
+
+- **Incremental Embeddings** — Per-entity fingerprint sync replaces full embedding rebuild.
+  Only re-embeds entities whose features changed. Stored in `embeddings.meta.json` alongside
+  existing binary format.
+- **Confidence-Gated Auto-Lift** — Structural signal analysis (branches, loops, calls, early
+  returns) in new `signals.rs` module. Three confidence buckets:
+  - *Accept*: apply features silently (simple getters, setters, constructors)
+  - *Review*: show in batch 0 for LLM verification (moderate complexity)
+  - *Reject*: needs full LLM analysis (high complexity)
+  TOML rules extended with `max_branches`, `max_loops`, `max_calls` structural gates.
+- **Lift Quality Critic** — Non-blocking feedback on `submit_lift_results`. Checks for vague
+  verbs ("handle", "process"), implementation details ("loop", "iterate"), too-short/too-long
+  features, and duplicates. Features are always applied; warnings help the LLM self-correct.
+- **`plan_change` MCP tool** — Answers "what existing code needs to change for goal X, and in
+  what order?" Orchestrates search + impact_radius + topological sort + test coverage detection.
+  Returns dependency-safe modification order with blast radius analysis.
+- **`feature_source` provenance** — `Option<String>` field on Entity tracks feature origin
+  (`"auto"`, `"llm"`, `"synthesized"`). Backward-compatible via `serde(default)`.
+- MCP tool count: 20 → 21 (new: `plan_change`)
+
+## [0.3.0] - 2026-02-12
+
+### Added
+
+- **Language-Universal Auto-Lift** — 134 TOML-driven auto-lift rules across 13 languages with
+  acronym-aware field normalization (`getHTTPClient` → `return http client`) (#40)
+- **LLM Performance Optimizations** — `context_pack` super-tool (search→fetch→explore in 1
+  call), `impact_radius` BFS reachability, dependency context in lifting batches, auto-lift
+  trivial entities (≤3 lines, getter/setter/new patterns) (#38)
+- Preserve semantic features on `build_rpg` rebuild and prune `.rpgignore` files (#36)
+- MCP tool count: 17 → 20 (new: `context_pack`, `impact_radius`, `reconstruct_plan`)
+
+### Fixed
+
+- Scope auto-lift rules by language to prevent cross-language collisions (#42)
+
+## [0.2.0] - 2026-02-11
+
+### Added
+
+- **Reconstruction Scheduler** — `reconstruct_plan` builds dependency-safe execution batches
+  for guided code reconstruction workflows (#34)
+- Validation improvements and documentation fixes (#34)
+
+### Changed
+
+- **Refactored rpg-mcp** — Split monolithic `tools.rs` into focused modules: `params.rs`,
+  `types.rs`, `helpers.rs`, `server.rs`
+- Test count: 379 → 446+
+
+## [0.1.9] - 2026-02-09
 
 ### Added
 
@@ -17,30 +70,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Three-Zone Drift Judgment** (Algorithm 3) — Configurable drift thresholds split
   re-lifted entities into three zones:
   - `drift < 0.3` (ignore): minor edit, in-place update
-  - `0.3 ≤ drift ≤ 0.7` (borderline): surfaced for agent review via routing candidates
+  - `0.3 <= drift <= 0.7` (borderline): surfaced for agent review via routing candidates
   - `drift > 0.7` (auto-route): automatically queued for re-routing
   New config options: `drift_ignore_threshold`, `drift_auto_threshold`.
 - **Embedding-Based Semantic Search** — Feature-level embeddings via `fastembed` +
   BGE-small-en-v1.5 (384 dimensions). `search_node` features mode now uses hybrid rank-based
   scoring (0.6 semantic + 0.4 lexical) with max-cosine similarity over per-feature vectors.
-  Model auto-downloads on first search, runs fully offline afterward. Lazy initialization,
-  corruption recovery, lifecycle sync across graph operations. Binary embedding storage at
-  `.rpg/embeddings.bin`.
-- **Routing Fallback** — `finalize_lifting` drains unrouted entities via Jaccard fallback,
-  ensuring graceful degradation when the agent doesn't call routing tools.
-- Full-scale paper fidelity documentation (`docs/paper_fidelity.md`)
-- Updated benchmark: 855 entities, MRR 0.409→0.589 (+0.181), Acc@10 51%→85% (+33pp)
+  Model auto-downloads on first search, runs fully offline afterward.
+- **TOML-driven paradigm pipeline** — Framework detection and entity classification via
+  declarative TOML configs instead of hardcoded patterns (#28)
+- **7 additional language parsers** — C, C++, Go (enhanced), Java (enhanced), with
+  per-language entity and dependency modules (#28)
+- Semantic drift re-routing and feature-based hierarchy routing (#30)
+- Full-scale paper fidelity documentation
+- MCP tool count: 15 → 17 (new: `get_routing_candidates`, `submit_routing_decisions`)
 
 ### Changed
 
-- `graph_revision` now uses `updated_at` timestamp (changes on every save) instead of
-  `base_commit` for stale-decision protection.
-- `build_rpg`, `update_rpg`, `reload_rpg` now clear/reload pending routing state and
-  invalidate the embedding index on graph replacement.
-- Persist-write errors for pending routing are now logged instead of silently ignored.
-- Binary embedding format includes overflow guards for entity ID and feature vector counts.
-- Removed "agent-as-lifter" branding across all documentation — now uses "connected coding
-  agent" or "MCP-native" terminology.
+- Parser architecture refactored into per-language modules under `crates/rpg-parser/src/languages/`
+- Paradigm detection moved to `crates/rpg-parser/src/paradigms/`
+- `graph_revision` now uses `updated_at` timestamp instead of `base_commit`
+- `build_rpg`, `update_rpg`, `reload_rpg` now clear pending routing and invalidate embeddings
+- Test count: 275 → 379+
+
+### Fixed
+
+- Windows `build.rs` path escaping and dropped Intel Mac from release matrix
 
 ## [0.1.8] - 2026-02-09
 
@@ -48,19 +103,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Redux Toolkit frontend adapter** for TypeScript/React/Next.js — extracts `createSlice`,
   `createAsyncThunk`, RTK Query hooks, and store configuration as first-class entities (#26)
-- **TOML-driven paradigm pipeline** — framework detection and entity classification via
-  declarative TOML configs instead of hardcoded patterns (#28)
-- **7 additional language parsers** — C, C++, Go (enhanced), Java (enhanced), with
-  per-language entity and dependency modules (#28)
 - Benchmark comparison analysis (`benchmarks/comparison.md`)
 - Use cases guide (`use_cases.md`)
-- Semantic drift re-routing and feature-based hierarchy routing (#30)
-
-### Changed
-
-- Parser architecture refactored into per-language modules under `crates/rpg-parser/src/languages/`
-- Paradigm detection moved to `crates/rpg-parser/src/paradigms/`
-- Test count: 275 → 379+
 
 ## [0.1.7] - 2026-02-08
 
