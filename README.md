@@ -107,7 +107,40 @@ The project-level config overrides the global one. Restart Claude Code after cre
 
 </details>
 
-## How It Works
+## Lifecycle
+
+```mermaid
+graph LR
+    A[Install] --> B[Build]
+    B --> C[Lift]
+    C --> D[Use]
+    D --> E[Update]
+    E --> C
+```
+
+You install it. Your agent does the rest.
+
+## Getting Started
+
+Tell your coding agent:
+
+> "Build and lift the RPG for this repo"
+
+That's it. The agent handles everything. Here's what happens:
+
+1. **Build** — Indexes all code entities and dependencies (~5 seconds)
+2. **Lift** — Agent analyzes each function/class and adds semantic features (~2 min per 100 entities)
+3. **Organize** — Agent discovers functional domains and builds a semantic hierarchy (~30 seconds)
+4. **Save** — Graph is written to `.rpg/graph.json` — commit it so everyone benefits
+
+Once lifted, try queries like:
+
+- *"What handles authentication?"*
+- *"Show me everything that depends on the database connection"*
+- *"Plan a change to add rate limiting to API endpoints"*
+
+<details>
+<summary><strong>How it works under the hood</strong></summary>
 
 The RPG (Repository Planning Graph) is a hierarchical, dual-view representation from the
 research papers cited below:
@@ -125,16 +158,23 @@ research papers cited below:
 The graph is saved to `.rpg/graph.json` and **should be committed to your repo** — this way
 all collaborators and AI tools get instant semantic search without rebuilding.
 
+</details>
+
 ## MCP Tools
+
+**Build & Maintain**
 
 | Tool | Description |
 |------|-------------|
 | `build_rpg` | Index the codebase (run once, instant) |
-| `search_node` | Search entities by intent or keywords (hybrid embedding + lexical scoring) |
-| `fetch_node` | Get entity metadata, source code, dependencies, and hierarchy context |
-| `explore_rpg` | Traverse dependency graph (upstream, downstream, or both) |
-| `rpg_info` | Graph statistics, hierarchy overview, per-area lifting coverage |
 | `update_rpg` | Incremental update from git changes |
+| `reload_rpg` | Reload graph from disk after external changes |
+| `rpg_info` | Graph statistics, hierarchy overview, per-area lifting coverage |
+
+**Semantic Lifting**
+
+| Tool | Description |
+|------|-------------|
 | `lifting_status` | Dashboard — coverage, per-area progress, NEXT STEP |
 | `get_entities_for_lifting` | Get entity source code for your agent to analyze |
 | `submit_lift_results` | Submit the agent's semantic features back to the graph |
@@ -145,21 +185,49 @@ all collaborators and AI tools get instant semantic search without rebuilding.
 | `submit_hierarchy` | Apply hierarchy assignments to the graph |
 | `get_routing_candidates` | Get entities needing semantic routing (drifted or newly lifted) |
 | `submit_routing_decisions` | Submit routing decisions (hierarchy path or "keep") |
+
+**Navigate & Search**
+
+| Tool | Description |
+|------|-------------|
+| `search_node` | Search entities by intent or keywords (hybrid embedding + lexical scoring) |
+| `fetch_node` | Get entity metadata, source code, dependencies, and hierarchy context |
+| `explore_rpg` | Traverse dependency graph (upstream, downstream, or both) |
 | `context_pack` | Single-call search+fetch+explore with token budget |
+
+**Plan & Analyze**
+
+| Tool | Description |
+|------|-------------|
 | `impact_radius` | BFS reachability analysis — "what depends on X?" |
 | `plan_change` | Change planning — find relevant entities, modification order, blast radius |
 | `find_paths` | K-shortest dependency paths between two entities |
 | `slice_between` | Extract minimal connecting subgraph between entities |
 | `reconstruct_plan` | Dependency-safe reconstruction execution plan |
-| `reload_rpg` | Reload graph from disk after external changes |
 
-### Lifting Flow
+### Lifting: What It Is
+
+Lifting is the process where your coding agent reads each function, class, and method in your
+codebase and describes what it does in plain English — verb-object features like "validate user
+credentials" or "serialize config to disk". These features power semantic search: find code by
+what it *does*, not what it's named.
+
+- **No API keys needed** — your connected coding agent (Claude Code, Cursor, etc.) *is* the LLM
+- **One-time cost** — lift once, commit `.rpg/`, and every future session starts instantly
+- **Resumable** — if interrupted, `lifting_status` picks up exactly where you left off
+- **Incremental** — after code changes, `update_rpg` detects what moved and only re-lifts those entities
+- **Scoped** — lift the whole repo or just a subdirectory (`"src/auth/**"`)
+
+<details>
+<summary><strong>Lifting protocol details (for tool builders)</strong></summary>
 
 1. Ask your agent to "lift the code" (or call `get_entities_for_lifting` with a scope)
 2. The tool returns entity source code with analysis instructions
 3. Your agent analyzes the code and calls `submit_lift_results` with semantic features
 4. The agent continues through all batches automatically, dispatching subagents for large repos
 5. After lifting, `finalize_lifting` → `build_semantic_hierarchy` → `submit_hierarchy`
+
+</details>
 
 ## Supported Languages
 
@@ -262,6 +330,61 @@ rpg-encoder/
 | SWE-bench evaluation | 93.7% Acc@5 | Self-eval: MRR 0.59, Acc@10 85% ([benchmark](benchmarks/README.md)) |
 | Languages | Python-focused | 15 languages |
 | TOON format | Not described | Implemented for token efficiency |
+
+</details>
+
+<details>
+<summary><strong>FAQ</strong></summary>
+
+**Do I need an API key or a local LLM?**
+
+No. Your connected coding agent (Claude Code, Cursor, etc.) *is* the LLM. rpg-encoder sends
+source code to the agent via MCP tools, the agent analyzes it and sends back semantic features.
+No API keys, no external services, no local model downloads.
+
+**How long does lifting take?**
+
+Roughly 2 minutes per 100 entities. A small project (50 files, ~200 entities) takes about
+5 minutes. A large project (500+ files) should use parallel subagents — your agent handles
+this automatically. Build and hierarchy steps are near-instant.
+
+**What happens when I delete or rename files?**
+
+Run `update_rpg` (or use the pre-commit hook). It diffs against the last indexed commit,
+removes deleted entities, re-extracts renamed/modified files, and marks changed entities
+for re-lifting. The graph stays consistent without a full rebuild.
+
+**Can I lift only part of the codebase?**
+
+Yes. Pass a file glob to `get_entities_for_lifting`: `"src/auth/**"`, `"crates/rpg-core/**"`,
+etc. You can also use `.rpgignore` (gitignore syntax) to permanently exclude files like
+vendored dependencies or generated code.
+
+**What if lifting gets interrupted?**
+
+The graph is saved to disk after every `submit_lift_results` call. Start a new session,
+call `lifting_status`, and it picks up exactly where you left off — only unlifted entities
+are returned.
+
+**How does semantic search work?**
+
+`search_node` uses hybrid scoring: BGE-small-en-v1.5 embeddings for semantic similarity
+plus lexical matching for exact names and paths. Query with intent ("handle authentication")
+or exact identifiers ("AuthService::validate") — both work.
+
+**Should I commit `.rpg/` to the repo?**
+
+Yes. The `.rpg/graph.json` file contains the full semantic graph. Committing it means
+collaborators and CI agents get instant semantic search without re-lifting. The graph
+is deterministic (sorted maps, stable serialization), so diffs are meaningful.
+
+**What about monorepos or very large codebases?**
+
+Use scoped lifting to process one area at a time (`"packages/api/**"`, `"services/auth/**"`).
+Your coding agent will automatically dispatch parallel subagents for large scopes. The
+incremental update system (`update_rpg`) keeps the graph current without full rebuilds.
+For very large repos, use `.rpgignore` to exclude vendored code, generated files, and
+test fixtures.
 
 </details>
 
