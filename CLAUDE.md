@@ -7,7 +7,7 @@ Rust workspace for building Repository Planning Graphs (RPGs) — semantic code 
 ```bash
 cargo fmt --all                                    # format
 cargo clippy --workspace --all-targets -- -D warnings  # lint
-cargo test --workspace                             # test (262 tests)
+cargo test --workspace                             # test (640+ tests)
 cargo build --release -p rpg-mcp                   # release binary
 ```
 
@@ -69,7 +69,7 @@ crates/
 - Edges are sorted by `(source, target, kind)` before serialization
 - `lifting_coverage()` excludes Module entities (they get features via aggregation)
 - The connected coding agent IS the LLM for lifting (no API key needed)
-- Edge kinds: Imports, Invokes, Inherits, Composes, Contains
+- Edge kinds: Imports, Invokes, Inherits, Composes, Renders, ReadsState, WritesState, Dispatches, DataFlow, Contains
 
 ## CI Checks
 

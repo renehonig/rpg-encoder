@@ -25,7 +25,7 @@ built from publicly available research papers. When contributing:
 # Build all crates
 cargo build --workspace
 
-# Run all tests (379+ test cases)
+# Run all tests (640+ test cases)
 cargo test --workspace
 
 # Check for lint issues
@@ -42,7 +42,7 @@ All four checks must pass before submitting a PR. CI enforces these automaticall
 ```
 crates/
 ├── rpg-core       Core types: RPGraph, Entity, HierarchyNode, storage, config
-├── rpg-parser     Tree-sitter parsing for 8 languages (entities + dependencies)
+├── rpg-parser     Tree-sitter parsing for 15 languages (entities + dependencies)
 ├── rpg-encoder    LLM integration, 3-phase pipeline, incremental evolution
 ├── rpg-nav        Navigation: search, fetch, explore, TOON serialization
 ├── rpg-cli        CLI binary
@@ -54,7 +54,7 @@ crates/
 ### High-Impact Areas
 
 - **Benchmarks** — Evaluate search/localization quality on real repositories
-- **Language support** — Add tree-sitter extractors for new languages (Ruby, Kotlin, Swift, etc.)
+- **Language support** — Improve existing extractors or add tree-sitter support for additional languages
 - **Search quality** — Improve scoring, ranking, and result relevance
 - **Documentation** — Usage guides, tutorials, examples
 

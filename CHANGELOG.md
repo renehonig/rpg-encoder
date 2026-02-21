@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.2] - 2026-02-21
+
+### Fixed
+
+- **Auto-migrate existing Windows graphs** — When loading graphs created on Windows
+  (schema <2.2.0), all backslash entity IDs are automatically normalized to forward
+  slashes across `entities`, `file_index`, `edges`, and `hierarchy`. All lifted
+  semantic features and data are fully preserved. Schema version bumped to 2.2.0.
+
+## [0.6.1] - 2026-02-21
+
+### Fixed
+
+- **Windows path format mismatch in entity IDs** (#49) — `Path::display()` produces
+  backslashes on Windows, causing key mismatches when MCP tools receive forward-slash
+  keys from users/LLMs. Added `normalize_path()` utility in `rpg-core::graph` and
+  applied it at all ID-generating call sites: `RawEntity::id()`,
+  `resolve_dependencies()`, `apply_renames()`, and `create_module_entities()`.
+  No-op on Unix. Closes #49.
+- Pre-existing clippy `inefficient_to_string` warnings in `critic.rs`, `hierarchy.rs`,
+  and `evolution_test.rs`.
+
+## [0.6.0] - 2026-02-13
+
+### Added
+
+- **Entity Signatures** — Typed function/method signatures extracted from AST
+  (parameters with type annotations, return types). Stored on `Entity.signature`.
+- **DataFlow Edges** — New `EdgeKind::DataFlow` for parameter passing and return
+  value flow between entities. Adds data lineage tracking to the dependency graph.
+- **Area Connectivity** — `rpg_info` now reports inter-area dependency counts,
+  showing which functional areas are most tightly coupled.
+- MCP tool count: 23
+
+### Changed
+
+- Schema version bumped for signature and data flow support
+
 ## [0.5.0] - 2026-02-13
 
 ### Added

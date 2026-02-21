@@ -120,11 +120,14 @@ These tools solve different problems. They're complementary, not competitive.
 | Go | ✅ | ✅ | ✅ |
 | Java | ✅ | ✅ | ✅ |
 | C/C++ | ✅ | ✅ | ✅ |
-| Ruby | ❌ | ✅ | ✅ |
-| PHP | ❌ | ✅ | ✅ |
-| C# | ❌ | ✅ | ✅ |
-| Swift | ❌ | ✅ | ✅ |
-| **Coverage** | 8 languages | All (text-based) | 40+ (LSP) |
+| Ruby | ✅ | ✅ | ✅ |
+| PHP | ✅ | ✅ | ✅ |
+| C# | ✅ | ✅ | ✅ |
+| Swift | ✅ | ✅ | ✅ |
+| Kotlin | ✅ | ✅ | ✅ |
+| Scala | ✅ | ✅ | ✅ |
+| Bash | ✅ | ✅ | ✅ |
+| **Coverage** | 15 languages | All (text-based) | 40+ (LSP) |
 
 ### Setup Requirements
 
@@ -219,7 +222,7 @@ This hierarchy emerges from the code's semantics, not its file structure.
 
 - **Read-only**: Cannot edit code directly
 - **Requires lifting**: Initial semantic analysis takes time (minutes for large repos)
-- **Limited languages**: 8 languages vs Serena's 40+
+- **Limited languages**: 15 languages vs Serena's 40+
 - **Context limits**: Large repos require subagent dispatch for lifting
 
 ### Claude Code

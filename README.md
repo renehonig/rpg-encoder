@@ -145,6 +145,12 @@ all collaborators and AI tools get instant semantic search without rebuilding.
 | `submit_hierarchy` | Apply hierarchy assignments to the graph |
 | `get_routing_candidates` | Get entities needing semantic routing (drifted or newly lifted) |
 | `submit_routing_decisions` | Submit routing decisions (hierarchy path or "keep") |
+| `context_pack` | Single-call search+fetch+explore with token budget |
+| `impact_radius` | BFS reachability analysis — "what depends on X?" |
+| `plan_change` | Change planning — find relevant entities, modification order, blast radius |
+| `find_paths` | K-shortest dependency paths between two entities |
+| `slice_between` | Extract minimal connecting subgraph between entities |
+| `reconstruct_plan` | Dependency-safe reconstruction execution plan |
 | `reload_rpg` | Reload graph from disk after external changes |
 
 ### Lifting Flow
@@ -167,6 +173,13 @@ all collaborators and AI tools get instant semantic search without rebuilding.
 | Java | Classes, methods, interfaces | imports, calls, inheritance |
 | C | Functions, structs | includes, calls |
 | C++ | Functions, classes, methods, structs | includes, calls, inheritance |
+| C# | Classes, methods, interfaces | using, calls, inheritance |
+| PHP | Functions, classes, methods | use, calls, inheritance |
+| Ruby | Classes, methods, modules | require, calls, inheritance |
+| Kotlin | Functions, classes, methods | imports, calls, inheritance |
+| Swift | Functions, classes, structs, protocols | imports, calls, inheritance |
+| Scala | Functions, classes, objects, traits | imports, calls, inheritance |
+| Bash | Functions | source, calls |
 
 <details>
 <summary><strong>CLI</strong></summary>
@@ -226,7 +239,7 @@ search_result_limit = 10
 ```
 rpg-encoder/
 ├── rpg-core        Core graph types (RPGraph, Entity, HierarchyNode), storage, LCA
-├── rpg-parser      Tree-sitter entity + dependency extraction (8 languages)
+├── rpg-parser      Tree-sitter entity + dependency extraction (15 languages)
 ├── rpg-encoder     Encoding pipeline, semantic lifting utilities, incremental evolution
 │   └── prompts/        Prompt templates (embedded via include_str!)
 ├── rpg-nav         Search, fetch, explore, TOON serialization
@@ -245,9 +258,9 @@ rpg-encoder/
 | Lifting strategy | Full upfront via API | Progressive — your coding agent lifts via MCP |
 | Semantic routing | LLM-based | LLM-based (via MCP routing protocol) |
 | Feature search | Embedding-based | Hybrid embedding + lexical (BGE-small-en-v1.5) |
-| MCP server | Described, not shipped | Working, with 17 tools |
+| MCP server | Described, not shipped | Working, with 23 tools |
 | SWE-bench evaluation | 93.7% Acc@5 | Self-eval: MRR 0.59, Acc@10 85% ([benchmark](benchmarks/README.md)) |
-| Languages | Python-focused | 8 languages |
+| Languages | Python-focused | 15 languages |
 | TOON format | Not described | Implemented for token efficiency |
 
 </details>
