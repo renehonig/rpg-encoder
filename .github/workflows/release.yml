@@ -45,9 +45,19 @@ jobs:
         if: matrix.cross
         run: |
           sudo dpkg --add-architecture arm64
+          # Restrict existing sources to amd64 (DEB822 .sources format on Ubuntu 24.04+)
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+            sudo sed -i '/^Types: deb/i Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+          # Also handle classic .list format for third-party repos
           sudo sed -i '/\[arch=/!s/^deb /deb [arch=amd64] /' /etc/apt/sources.list.d/*.list 2>/dev/null || true
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ $(lsb_release -cs) main restricted universe" | sudo tee /etc/apt/sources.list.d/arm64.list
-          echo "deb [arch=arm64] http://ports.ubuntu.com/ $(lsb_release -cs)-updates main restricted universe" | sudo tee -a /etc/apt/sources.list.d/arm64.list
+          # Add arm64 packages from ports.ubuntu.com
+          CODENAME=$(lsb_release -cs)
+          cat <<SOURCES | sudo tee /etc/apt/sources.list.d/arm64-cross.list
+          deb [arch=arm64] http://ports.ubuntu.com/ ${CODENAME} main restricted universe
+          deb [arch=arm64] http://ports.ubuntu.com/ ${CODENAME}-updates main restricted universe
+          deb [arch=arm64] http://ports.ubuntu.com/ ${CODENAME}-security main restricted universe
+          SOURCES
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu libssl-dev:arm64
           echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
