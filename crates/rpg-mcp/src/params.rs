@@ -210,3 +210,46 @@ pub(crate) struct SliceBetweenParams {
     /// Include entity metadata (name, file, features) in output
     pub(crate) include_metadata: Option<bool>,
 }
+
+/// Parameters for the `analyze_health` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub(crate) struct AnalyzeHealthParams {
+    /// Instability threshold above which entities are flagged as highly unstable (default: 0.7).
+    pub(crate) instability_threshold: Option<f64>,
+    /// Minimum total degree for god object detection (default: 10).
+    pub(crate) god_object_threshold: Option<usize>,
+    /// Run Rabin-Karp token-based clone detection (reads source files from disk, slower). Default: false.
+    pub(crate) include_duplication: Option<bool>,
+    /// Run Jaccard feature-based semantic clone detection (in-memory, fast).
+    /// Requires entities to have been lifted. Default: false.
+    pub(crate) include_semantic_duplication: Option<bool>,
+    /// Jaccard similarity threshold for semantic clone detection (default: 0.6).
+    pub(crate) semantic_similarity_threshold: Option<f64>,
+}
+
+/// Parameters for the `detect_cycles` tool.
+#[derive(Debug, Deserialize, JsonSchema)]
+pub(crate) struct DetectCyclesParams {
+    /// Maximum number of cycles to return (default: all). Use to limit output.
+    pub(crate) max_cycles: Option<usize>,
+    /// Minimum cycle length to report (default: 2). Use 3+ to skip trivial 2-cycles.
+    pub(crate) min_cycle_length: Option<usize>,
+    /// Maximum cycle length to detect (default: 20, prevents exponential blowup)
+    pub(crate) max_cycle_length: Option<usize>,
+    /// Filter to specific hierarchy areas (comma-separated, e.g., "Navigation,Parser").
+    /// Case-sensitive. Matches the L1 area in hierarchy_path.
+    pub(crate) area: Option<String>,
+    /// Sort cycles by: "length" (default, ascending — shortest cycles first),
+    /// "file_count" (most files involved first), "entity_count" (descending — longest cycles first).
+    pub(crate) sort_by: Option<String>,
+    /// Include file paths in output (default: true)
+    pub(crate) include_files: Option<bool>,
+    /// Only show cycles that span multiple files (default: false).
+    /// Filters out cycles where all entities are in the same file.
+    pub(crate) cross_file_only: Option<bool>,
+    /// Only show cycles that span multiple hierarchy areas (default: false).
+    /// Filters out cycles where all entities belong to the same L1 area.
+    pub(crate) cross_area_only: Option<bool>,
+    /// Ignore .rpgignore rules and include all files (default: false)
+    pub(crate) ignore_rpgignore: Option<bool>,
+}

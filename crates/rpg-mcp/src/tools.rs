@@ -2883,6 +2883,121 @@ impl RpgServer {
 
         Ok(result)
     }
+
+    #[tool(
+        description = "Analyze code health metrics including coupling, instability, centrality, and potential god objects. Returns entities with architectural issues and recommendations for refactoring. Set include_duplication=true to detect code clones via Rabin-Karp fingerprinting (reads source files, slower). Set include_semantic_duplication=true to detect conceptual duplicates via Jaccard similarity on lifted features (in-memory, fast; requires entities to be lifted)."
+    )]
+    async fn analyze_health(
+        &self,
+        Parameters(params): Parameters<AnalyzeHealthParams>,
+    ) -> Result<String, String> {
+        self.ensure_graph().await?;
+        let notice = self.staleness_notice().await;
+        let guard = self.graph.read().await;
+        let graph = guard.as_ref().unwrap();
+
+        let config = rpg_nav::health::HealthConfig {
+            instability_threshold: params.instability_threshold.unwrap_or(0.7),
+            god_object_degree_threshold: params.god_object_threshold.unwrap_or(10),
+            include_duplication: params.include_duplication.unwrap_or(false),
+            include_semantic_duplication: params.include_semantic_duplication.unwrap_or(false),
+            semantic_duplication_config: rpg_nav::duplication::SemanticDuplicationConfig {
+                similarity_threshold: params.semantic_similarity_threshold.unwrap_or(0.6),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let report = rpg_nav::health::compute_health_full(graph, &self.project_root, &config);
+
+        Ok(format!(
+            "{}{}",
+            notice,
+            rpg_nav::toon::format_health_report(&report)
+        ))
+    }
+
+    #[tool(
+        description = "Detect circular dependencies (cycles) in the codebase. Cycles are architectural smells where A depends on B, B on C, and C back on A. Returns all detected cycles with their entity chains. First call returns summary + recommendations. Use parameters to filter results."
+    )]
+    async fn detect_cycles(
+        &self,
+        Parameters(params): Parameters<DetectCyclesParams>,
+    ) -> Result<String, String> {
+        self.ensure_graph().await?;
+        let notice = self.staleness_notice().await;
+        let guard = self.graph.read().await;
+        let graph = guard.as_ref().unwrap();
+
+        let cross_file_only = params.cross_file_only.unwrap_or(false);
+        let cross_area_only = params.cross_area_only.unwrap_or(false);
+        let max_cycles = params.max_cycles.unwrap_or(usize::MAX);
+        let area = params.area.clone();
+        let sort_by = params
+            .sort_by
+            .clone()
+            .unwrap_or_else(|| "length".to_string());
+
+        let excluded_paths = if !params.ignore_rpgignore.unwrap_or(false) {
+            let ignore_path = self.project_root.join(".rpgignore");
+            let (gitignore, err) = ignore::gitignore::Gitignore::new(&ignore_path);
+            if err.is_none() || ignore_path.exists() {
+                Some(gitignore)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        let config = rpg_nav::cycles::CycleConfig {
+            max_cycles,
+            max_cycle_length: params.max_cycle_length.unwrap_or(20),
+            min_cycle_length: params.min_cycle_length.unwrap_or(2),
+            area,
+            sort_by,
+            include_files: params.include_files.unwrap_or(true),
+            cross_file_only,
+            cross_area_only,
+            excluded_paths,
+        };
+
+        let report = rpg_nav::cycles::detect_cycles(graph, &config);
+
+        let has_filters = params.max_cycles.is_some()
+            || params.min_cycle_length.unwrap_or(2) > 2
+            || params.area.is_some()
+            || params.cross_file_only.unwrap_or(false)
+            || params.cross_area_only.unwrap_or(false)
+            || params.sort_by.is_some();
+
+        let filter_summary = if has_filters {
+            Some(format!(
+                "area: {}, max_cycles: {}, cross_file: {}, cross_area: {}",
+                params.area.as_deref().unwrap_or("-"),
+                params
+                    .max_cycles
+                    .map(|n| n.to_string())
+                    .unwrap_or_else(|| "-".to_string()),
+                cross_file_only,
+                params.cross_area_only.unwrap_or(false)
+            ))
+        } else {
+            None
+        };
+
+        let opts = rpg_nav::toon::CycleReportOptions {
+            has_filters,
+            max_cycles,
+            filter_summary,
+        };
+
+        Ok(format!(
+            "{}{}",
+            notice,
+            rpg_nav::toon::format_cycle_report(&report, graph, &opts)
+        ))
+    }
 }
 
 impl RpgServer {

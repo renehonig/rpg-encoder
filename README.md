@@ -5,16 +5,10 @@
 [![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)](https://www.rust-lang.org)
 
 > [!NOTE]
-> This is an **independent, community-driven implementation** inspired by the
-> [RPG-Encoder paper](https://arxiv.org/abs/2602.02084) from Microsoft Research. It is **not**
-> affiliated with, endorsed by, or connected to Microsoft in any way. For the official
-> implementation, see [microsoft/RPG-ZeroRepo](https://github.com/microsoft/RPG-ZeroRepo).
->
-> Microsoft announced *"We are in the process of preparing a full public release of the codebase,
-> and all code will be released within the next two weeks."* — that was too long to wait.
-> This project was built with Claude by reading the publicly available research papers and
-> implementing the described algorithms from scratch in Rust. All code is original work.
-> The papers are cited for attribution.
+> **Independent implementation.** Built from scratch in Rust by reading the
+> [RPG-Encoder paper](https://arxiv.org/abs/2602.02084) (Luo et al., 2026, Microsoft Research).
+> No shared code with any other implementation. Not affiliated with or endorsed by Microsoft.
+> All code is original work; the paper is cited for attribution.
 
 ---
 
@@ -32,18 +26,25 @@ Search by what code *does*, not what it's named.
 
 ## Install
 
-Add to your MCP config (Claude Code `~/.claude.json`, Cursor settings, etc.):
+The MCP server automatically detects the project root — no path argument needed.
+
+Add to your MCP config (Claude Code `~/.claude.json`, Cursor settings, opencode, etc.):
 
 ```json
 {
   "mcpServers": {
     "rpg": {
       "command": "npx",
-      "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server", "/path/to/your/project"]
+      "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server"]
     }
   }
 }
 ```
+
+> [!TIP]
+> The path argument is optional. When omitted, the server falls back to the current working directory.
+> MCP clients (like opencode, Claude Code, Cursor) launch the server from the workspace directory,
+> so `current_dir()` automatically points to your project. If you pass a path explicitly, it will use that instead.
 
 <details>
 <summary>Alternative: build from source</summary>
@@ -59,46 +60,49 @@ Then use the binary path directly:
 {
   "mcpServers": {
     "rpg": {
-      "command": "/path/to/rpg-encoder/target/release/rpg-mcp-server",
-      "args": ["/path/to/your/project"]
+      "command": "/path/to/rpg-encoder/target/release/rpg-mcp-server"
     }
   }
 }
 ```
+
+> [!TIP]
+> The binary also accepts an optional path argument. Omit it to use the current working directory.
 
 </details>
 
 <details>
 <summary><strong>Multi-repo setup</strong></summary>
 
-The MCP server operates on the directory passed as its first argument. For multi-repo usage:
+The path argument is optional — the server defaults to the current working directory. This works
+automatically because MCP clients launch the server from the workspace directory.
 
-**Option 1: Global config (single primary repo)**
+**Global config (all repos use cwd)**
 
-Set your main development repo in `~/.claude.json`:
+No path needed — each session uses the directory where the MCP client was started:
 
 ```json
 {
   "mcpServers": {
     "rpg": {
       "command": "npx",
-      "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server", "/path/to/primary/repo"]
+      "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server"]
     }
   }
 }
 ```
 
-**Option 2: Per-project override**
+**Per-project override (explicit path)**
 
-Create `.claude/mcp_servers.json` in each repo that needs RPG:
+If you need a specific repo, pass the path:
 
 ```json
 {
-  "rpg": {
-    "type": "stdio",
-    "command": "npx",
-    "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server", "/path/to/this/repo"],
-    "env": {}
+  "mcpServers": {
+    "rpg": {
+      "command": "npx",
+      "args": ["-y", "-p", "rpg-encoder", "rpg-mcp-server", "/path/to/this/repo"]
+    }
   }
 }
 ```
